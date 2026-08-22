@@ -24,23 +24,54 @@ That's the whole feature set. There's no networking, no encryption, no
 authentication in front of the menu itself, and no logging beyond `print()`
 statements.
 
-## Hardware / software requirements
+## Hardware requirements
 
-- Raspberry Pi (or any board with a UART) with serial exposed at
-  `/dev/serial0`
-- R307S (or compatible) optical fingerprint sensor wired to that UART
+- Raspberry Pi (any model with a GPIO header / UART)
+- R307S (or compatible) optical fingerprint sensor, 6-pin JST-SM connector
 - Python 3
-- `pyserial`
-- `adafruit-circuitpython-fingerprint`
+
+## Wiring
+
+The script only uses 4 of the sensor's 6 wires: power, ground, and the two
+serial data lines. Wire colors vary by supplier — confirm against your
+module's datasheet/sticker rather than assuming.
+
+| R307S wire | Function | Connects to (Pi GPIO header) |
+|---|---|---|
+| Red | VCC (power) | Pin 2 or 4 (5V) — check your module's rated voltage |
+| Black | GND | Pin 6 (GND) |
+| Yellow | TX (sensor → host) | Pin 10 / GPIO15 (RXD) |
+| Green | RX (host → sensor) | Pin 8 / GPIO14 (TXD) |
+
+Note the cross-over: sensor **TX** → Pi **RX**, sensor **RX** → Pi **TX**, not
+straight across.
+
+### Before it'll work
+
+1. **Enable the UART, disable the login shell on it** — `sudo raspi-config`
+   → Interface Options → Serial Port → "login shell over serial" = **No**,
+   "serial hardware enabled" = **Yes**. Skipping this leaves `/dev/serial0`
+   occupied by a getty, and `serial.Serial(...)` will fail or read garbage.
+2. **On Pi models with onboard Bluetooth** (3, 4, Zero W, etc.),
+   `/dev/serial0` defaults to the mini-UART, which Bluetooth also uses and
+   whose clock isn't stable enough for reliable 57600 baud. Add
+   `dtoverlay=disable-bt` to `/boot/config.txt` (or
+   `/boot/firmware/config.txt` on newer OS builds) and reboot to free the
+   full PL011 UART for the sensor.
+3. **Reboot after config changes**, then confirm the device exists:
+   `ls -l /dev/serial0`.
+
+## Software setup
 
 ```bash
 pip3 install pyserial adafruit-circuitpython-fingerprint
 ```
 
-On a Pi, the serial console/login shell on `/dev/serial0` usually needs to be
-disabled first (`raspi-config` → Interface Options → Serial Port → login
-shell: No, hardware enabled: Yes), or the sensor and the OS will fight over
-the same UART.
+That's the full dependency list this script needs — it only ever imports
+`serial` and `adafruit_fingerprint`. `adafruit-blinka` and `rpi.gpio` are
+not required (this script does no direct GPIO access), and `pyfingerprint`
+is a separate, incompatible library with a different API — don't mix its
+example code into this script.
 
 ## Running it
 
@@ -59,7 +90,7 @@ You get a menu:
 
 Enrollment asks for a name, then two finger placements of the same finger.
 Authentication scans once; on no match it will ask `y/n` whether to enroll
-that finger immediately.
+that finger immediately, reusing the scan already taken.
 
 ## Data storage
 
