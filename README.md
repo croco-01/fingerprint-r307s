@@ -130,7 +130,7 @@ don't mix its example code in here.
 ## Running it
 
 ```bash
-python3 fingerprint.py
+python3 main.py
 ```
 
 ```
@@ -187,6 +187,6 @@ project:
 ## File layout
 
 ```
-fingerprint.py                  # the script itself
+main.py                  # the script itself
 fingerprint_database.json       # generated at runtime, in the cwd
 ```
