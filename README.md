@@ -122,10 +122,7 @@ pip3 install pyserial adafruit-circuitpython-fingerprint
 ```
 
 This is the full dependency list — the script only ever imports `serial`
-and `adafruit_fingerprint`. `adafruit-blinka` and `rpi.gpio` are **not**
-required (there's no direct GPIO access in this script), and
-`pyfingerprint` is a separate, incompatible library with a different API —
-don't mix its example code in here.
+and `adafruit_fingerprint`.
 
 ## Running it
 
